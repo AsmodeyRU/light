@@ -1,0 +1,32 @@
+# CMake
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# OpenWrt build
+externals/openwrt/bin/
+externals/openwrt/build_dir/
+externals/openwrt/logs/
+externals/openwrt/tmp/
+externals/openwrt/dl/
+
+# OpenWrt
+openwrt_pkg/*.ipk
+
+# Locals
+.config
+
+# VS Code
+.vscode/
+*.code-workspace
+*.log
+
+# temp and backup
+*~
+.*.swp
+.*.swo
+*.bak
+Thumbs.db
+.DS_Store

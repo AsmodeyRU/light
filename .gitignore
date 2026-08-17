@@ -1,0 +1,19 @@
+# CMake
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# VS Code
+.vscode/
+*.code-workspace
+*.log
+
+# temp and backup
+*~
+.*.swp
+.*.swo
+*.bak
+Thumbs.db
+.DS_Store

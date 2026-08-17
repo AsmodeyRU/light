@@ -33,9 +33,20 @@ Works on TP‑Link TL‑WDR4300 v1 (ath79/generic), OpenWrt 23.05.5 r24106‑10c
     └── README.md # This documentation
 
 
-> Note: folders `externals/openwrt/build_dir`, `bin`, `tmp`, `logs`, `dl` are not stored in Git.
+>> **Note:** The real OpenWrt SDK should be cloned into `externals/openwrt` locally. This directory is ignored by Git and must not be pushed.
 
 ---
+
+## Getting the OpenWrt SDK
+
+Clone the SDK into the `externals/` directory:
+
+    cd light_control/externals
+    git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+    cd openwrt
+    git checkout openwrt-23.05   
+    ./scripts/feeds update -a
+    ./scripts/feeds install -a
 
 ## Environment setup
 

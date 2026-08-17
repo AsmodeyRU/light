@@ -4,7 +4,7 @@ set -e
 # Запоминаем путь, откуда запустили скрипт
 START_DIR="$(pwd)"
 
-BASE_DIR="$HOME/Projects/light/light_control/external/openwrt"
+BASE_DIR="$HOME/Projects/light/light_control/externals/openwrt"
 cd "$BASE_DIR"
 
 echo "=== Шаг 1: Обновление индекса пакетов (чтобы OpenWrt увидел light_control) ==="
@@ -30,7 +30,7 @@ echo "=== Готово. Вернулись в: $START_DIR ==="
 
 echo "Сборка завершена."
 
-# --- Путь к готовому .ipk (правильный, без дублирования external/openwrt) ---
+# --- Путь к готовому .ipk (правильный, без дублирования externals/openwrt) ---
 IPK_PATH="${BASE_DIR}/bin/packages/mips_24kc/light_control/light_control_1.0.19-1_mips_24kc.ipk"
 
 if [[ ! -f "$IPK_PATH" ]]; then

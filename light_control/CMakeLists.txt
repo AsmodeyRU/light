@@ -19,7 +19,7 @@ if(OPENWRT_BUILD)
     endif()
 
     if(NOT DEFINED STAGING_DIR)
-        set(STAGING_DIR "/home/xdcsystems/Projects/light/light_control/external/openwrt/staging_dir")
+        set(STAGING_DIR "/home/xdcsystems/Projects/light/light_control/externals/openwrt/staging_dir")
     endif()
 
     # Добавляем путь к инструментам в PATH

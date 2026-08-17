@@ -45,13 +45,21 @@ int main() {
     Stub stub(SensorScenario::Evening);
     stub.init(0x23);
 
-    while (true) {
-        int lux = stub.readLux();
-        int dim = compute_dim_value(lux);
-        uint8_t b = static_cast<uint8_t>(dim);
+    // Фиксированный буфер на стеке: ровно 2 байта
+    uint8_t packet[2];
 
-        // Отправляем ровно 1 байт — диммер (0–100)
-        transport.send(&b, 1);
+    int lux {0};
+    int dim {0};
+
+    while (true) {
+        lux = stub.readLux();
+        dim = compute_dim_value(lux);
+
+        // Заполняем пакет строго по формату light_control: [ID][level]
+        packet[0] = DEVICE_ID;
+        packet[1] = static_cast<uint8_t>(dim);  // 0–100;
+
+        transport.send(packet, sizeof(packet));
 
         platform_delay_ms(1000);
     }

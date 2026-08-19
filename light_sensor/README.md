@@ -34,24 +34,129 @@ A compact, memory‑safe sensor node for ambient light measurement (BH1750) with
 
 ### Linux (UDP POSIX transport)
 
+#### Using build script
+
+To build the project for Linux, use the provided build script:
+
+    bash /home/xdcsystems/Projects/light/light_sensor/build_linux.sh
+
+#### Manual Build Instructions
+
+If you prefer manual build:
+
     mkdir build_linux && cd build_linux
     cmake .. -DPLATFORM_LINUX=ON -DPLATFORM_TEST=OFF -DPLATFORM_ESP32=OFF
     make -j$(nproc)
     ./light_sensor
 
+#### Automated Build Script Details
+The build script performs the following actions:
+
+- Cleans up existing build directory
+- Creates new build directory
+- Configures project with Ninja generator
+- Builds the project
+- Displays path to the resulting binary
+
 ### Test Build (No Hardware Required)
 Uses stub sensor and null transport to validate logic without real hardware.
+
+#### Using build script
+
+To build the project for Linux, use the provided build script:
+
+    bash /home/xdcsystems/Projects/light/light_sensor/build_test_linux.sh
+
+#### Manual Build Instructions
+
+If you prefer manual build:
 
     mkdir build_test && cd build_test
     cmake .. -DPLATFORM_TEST=ON -DPLATFORM_LINUX=OFF -DPLATFORM_ESP32=OFF
     make -j$(nproc)
     ./light_sensor
 
+#### Automated Build Script Details
+The build script performs the following actions:
+
+- Cleans up existing build directory
+- Creates new build directory
+- Configures project with Ninja generator
+- Builds the project
+- Displays path to the resulting binary
+
+
 ### ESP32 (Wi‑Fi Transport)
 
-    mkdir build_esp32 && cd build_esp32
-    cmake .. -DPLATFORM_ESP32=ON -DPLATFORM_LINUX=OFF -DPLATFORM_TEST=OFF
-    make -j$(nproc)
+#### Prerequisites
+- Python 3.7+ with required packages
+- Git for repository management
+- CMake ≥ 3.16
+- ESP32 toolchain properly configured
+
+#### Installing ESP-IDF
+
+1. Navigate to externals directory:
+
+        cd externals
+
+2. Clone ESP-IDF repository:
+
+        git clone --recursive -b release/v6.0.2 https://github.com/espressif/esp-idf.git
+
+        cd esp-idf
+
+        git submodule update --init --recursive
+
+        # install toolchain
+        ./install.sh esp32    
+
+        # set environment
+        . ./export.sh
+
+3. Verify installation:
+
+        idf.py --version
+        idf.py check-python-dependencies
+
+#### Building Process
+
+To build the project for ESP32, use the provided build script:
+
+    bash ./build_esp32.sh
+
+The script performs the following actions:
+
+- Checks for ESP-IDF presence
+- Sets up build environment
+- Cleans previous build artifacts
+- Configures target to ESP32
+- Initiates build process
+- Deployment
+
+After successful build, you can flash the device:
+
+    cd esp32/build
+
+    # Flash the application
+    idf.py -p <PORT> flash
+
+    # Monitor output
+    idf.py -p <PORT> monitor
+
+Replace <PORT> with your actual ESP32 serial port (e.g., /dev/ttyUSB0).
+
+#### Build Artifacts
+After successful build, you will find:
+
+- Bootloader: esp32/build/bootloader/bootloader.bin
+- Application image: esp32/build/*.bin
+
+#### Troubleshooting
+
+- Build errors - check idf.py check-python-dependencies
+- Missing tools - verify toolchain installation
+- Path issues - ensure correct IDF_PATH setup
 
 >Note: The ESP32 build assumes a toolchain and environment suitable for ESP32; adjust paths/flags as needed for your setup.
 

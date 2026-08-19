@@ -1,5 +1,7 @@
 #pragma once
+
 #include <cstddef>
+#include <utility> 
 
 template <typename T>
 class TransportWrapper {
@@ -8,8 +10,10 @@ public:
     // Если у T нет default-ctor — эта строка сама станет ошибкой, и мы сразу это увидим.
     TransportWrapper() = default;
 
-    explicit TransportWrapper(uint16_t port) : _t(port) {}
-    explicit TransportWrapper(const char* ip, uint16_t port) : _t(ip, port) {}
+    template <typename... Args>
+    explicit TransportWrapper(Args&&... args)
+        : _t(std::forward<Args>(args)...) {}
+
 
     bool init() {
         return _t.init();

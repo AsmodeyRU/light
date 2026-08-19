@@ -5,31 +5,50 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 
+//#include "trace_FreeRTOS.h"
 #include "transports/wifi_esp32.h"
 
 static const char* TAG = "WifiEsp32Tr";
+
+// Глобальный флаг для события IP (без аллокации)
+static bool s_got_ip = false;
+
+// C‑style обработчик событий (без лямбд, без захватов)
+static void wifi_event_handler(void *arg, esp_event_base_t base, int32_t id, void *event_data) {
+    (void)arg;
+    (void)event_data;
+    if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
+        s_got_ip = true;
+    }
+}
 
 WifiEsp32Transport::~WifiEsp32Transport() {
     if (_sock != -1) {
         close(_sock);
         _sock = -1;
     }
-    // Отключение Wi‑Fi обычно делается на уровне приложения/системы,
-    // а не внутри транспорта, чтобы не ломать другие модули.
+    // Wi‑Fi не останавливаем здесь — это ответственность верхнего уровня
 }
 
 bool WifiEsp32Transport::init() {
-    // Защита от повторной инициализации (тяжёлое подключение к Wi‑Fi)
     if (_initialized) {
         return true;
     }
 
-    if (!_ssid || !_ip) {
-        ESP_LOGW(TAG, "Missing SSID or IP in WifiEsp32Transport");
+    if (!_ssid || !_pass || !_ip) {
+        ESP_LOGW(TAG, "Missing SSID, password or IP in WifiEsp32Transport");
         return false;
     }
 
-    // --- Инициализация Wi‑Fi (ESP‑IDF) ---
+    // Уникальные имена, чтобы не конфликтовать с макросами ESP‑IDF
+    constexpr size_t SSID_LIMIT = 32;
+    constexpr size_t PASS_LIMIT = 64;
+
+    if (strlen(_ssid) > SSID_LIMIT || strlen(_pass) > PASS_LIMIT) {
+        ESP_LOGE(TAG, "SSID or password length is too long");
+        return false;
+    }
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t ret = esp_wifi_init(&cfg);
     if (ret != ESP_OK) {
@@ -38,7 +57,7 @@ bool WifiEsp32Transport::init() {
     }
 
     uint8_t mac_addr[6];
-    ret = esp_wifi_get_mac(ESP_IF_WIFI_STA, mac_addr);
+    ret = esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_get_mac failed: %d", ret);
         esp_wifi_deinit();
@@ -46,13 +65,22 @@ bool WifiEsp32Transport::init() {
     }
 
     wifi_config_t wifi_config = {};
-    strcpy((char*)wifi_config.sta.ssid, _ssid);
-    strcpy((char*)wifi_config.sta.password, _pass);
-    wifi_config.sta.scan_method = WIFI_SCAN_TYPE_ACTIVE;
-    wifi_config.sta.scan_time.active.min = 100;
-    wifi_config.sta.scan_time.active.max = 300;
+    strncpy((char*)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char*)wifi_config.sta.password, _pass, sizeof(wifi_config.sta.password) - 1);
 
-    ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
+    // threshold.authmode обязателен, иначе подключение к WPA2 может не работать
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    // scan_method НЕ задаём: ESP‑IDF сам выполнит активный скан при подключении
+    // use_nvs удалён: в новых версиях IDF это не задаётся здесь
+
+    ret = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_mode failed: %d", ret);
+        esp_wifi_deinit();
+        return false;
+    }
+
+    ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_set_config failed: %d", ret);
         esp_wifi_deinit();
@@ -66,33 +94,30 @@ bool WifiEsp32Transport::init() {
         return false;
     }
 
-    // Блокирующее ожидание подключения (в реальном проекте лучше через события)
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, nullptr));
+
+    s_got_ip = false;  // сброс флага перед ожиданием
     int retry = 0;
-    while (true) {
-        if (wifi_is_connected()) {
-            break;
-        }
+    while (!s_got_ip) {
         vTaskDelay(pdMS_TO_TICKS(500));
         retry++;
         if (retry > 20) {
-            ESP_LOGE(TAG, "Wi‑Fi connect timeout");
+            ESP_LOGE(TAG, "Wi‑Fi connect timeout: IP not obtained");
             esp_wifi_stop();
             esp_wifi_deinit();
             return false;
         }
     }
-    // --------------------------------------
 
-    // Создание UDP‑сокета
     _sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (_sock == -1) {
-        ESP_LOGE(TAG, "socket() failed");
+        ESP_LOGE(TAG, "socket() failed: %s", strerror(errno));
         esp_wifi_stop();
         esp_wifi_deinit();
         return false;
     }
 
-    // _addr уже обнулён благодаря {} в объявлении поля
     _addr.sin_family = AF_INET;
     _addr.sin_port = htons(_port);
 
@@ -106,13 +131,13 @@ bool WifiEsp32Transport::init() {
     }
 
     _initialized = true;
-    ESP_LOGI(TAG, "WifiEsp32Transport initialized");
+    ESP_LOGI(TAG, "WifiEsp32Transport initialized, IP obtained");
     return true;
 }
 
 bool WifiEsp32Transport::send(const unsigned char* data, std::size_t len) {
     if (_sock == -1 && !init()) {
-        // Ленивая инициализация: если забыли вызвать init(), пробуем сделать это здесь
+        // Ленивая инициализация
         return false;
     }
 

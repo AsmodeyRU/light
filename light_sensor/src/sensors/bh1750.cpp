@@ -1,5 +1,4 @@
 #include "sensors/bh1750.h"
-// Сюда подключай свой I2C HAL/библиотеку для Orange Pi / ESP32 / роутера
 
 bool Bh1750::init(uint8_t address) {
     // TODO: инициализация I2C, проверка устройства по адресу, настройка режима

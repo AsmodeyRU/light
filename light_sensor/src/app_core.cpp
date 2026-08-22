@@ -55,6 +55,13 @@ void run_application(T& transport) {
     template void run_application<TransportWrapper<WifiEsp32Transport >>(
         TransportWrapper<WifiEsp32Transport >&);
 
+#elif defined(PLATFORM_TEST)
+    #include "transports/null.h"   
+
+    template void run_application<TransportWrapper<NullTransport >>(
+        TransportWrapper<NullTransport >&);
+
 #else
     #error "Не определена целевая платформа: PLATFORM_LINUX или PLATFORM_ESP32"
+
 #endif

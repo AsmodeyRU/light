@@ -5,9 +5,6 @@
 
 // ESP-IDF заголовки: подключаем здесь, чтобы тип sockaddr_in был полным
 #include "lwip/sockets.h"
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>      // close
 
 class WifiEsp32Transport 
 {

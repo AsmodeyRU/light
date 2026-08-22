@@ -5,7 +5,6 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 
-//#include "trace_FreeRTOS.h"
 #include "transports/wifi_esp32.h"
 
 static const char* TAG = "WifiEsp32Tr";
@@ -49,12 +48,17 @@ bool WifiEsp32Transport::init() {
         return false;
     }
 
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t ret = esp_wifi_init(&cfg);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_init failed: %d", ret);
         return false;
     }
+     
+    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 
     uint8_t mac_addr[6];
     ret = esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
@@ -94,7 +98,6 @@ bool WifiEsp32Transport::init() {
         return false;
     }
 
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, nullptr));
 
     s_got_ip = false;  // сброс флага перед ожиданием

@@ -13,18 +13,21 @@ fi
 
 export IDF_PATH
 
-BUILD_DIR="$SCRIPT_DIR/esp32/build"
-if [ -d "$BUILD_DIR" ]; then
-    echo "🧹 Очищаем локальную папку сборки: $BUILD_DIR"
-    rm -rf "$BUILD_DIR"
-fi
+ # set environment
+. "$IDF_PATH/export.sh"
 
 cd "$SCRIPT_DIR/esp32"
 
-idf.py set-target esp32
+BUILD_DIR="$SCRIPT_DIR/esp32/build"
+if [ -d "$BUILD_DIR" ]; then
+    (cd "$BUILD_DIR"; ninja clean 2>/dev/null || true)
+fi
+
+#idf.py set-target esp32
 idf.py build
 
 echo ""
 echo "✅ Сборка ESP32 завершена"
 echo "📦 Bootloader: $SCRIPT_DIR/esp32/build/bootloader/bootloader.bin"
 echo "📦 App image:   $SCRIPT_DIR/esp32/build/*.bin"
+

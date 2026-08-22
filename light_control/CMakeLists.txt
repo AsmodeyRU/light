@@ -72,6 +72,11 @@ target_sources(light_control PRIVATE
     src/logger.cpp
     src/stats_collector.cpp
     src/ubus_exporter.cpp
+    src/uci_settings.cpp
+    src/brightness_curve.cpp
+    src/last_status.cpp
+    src/scene_scheduler.cpp
+    src/dimmer.cpp
 )
 
 target_include_directories(light_control PRIVATE
@@ -84,7 +89,7 @@ target_include_directories(light_control PRIVATE
 if(OPENWRT_BUILD)
     # Важно: порядок библиотек и явное указание директории поиска
     link_directories(${OPENWRT_LIB_DIR})
-    target_link_libraries(light_control PRIVATE atomic)
+    target_link_libraries(light_control PRIVATE atomic uci)
 endif()
 
 if(ENABLE_UBUS AND OPENWRT_BUILD)

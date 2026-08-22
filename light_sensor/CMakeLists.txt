@@ -19,7 +19,7 @@ if(${PLATFORM_COUNT} GREATER 1)
     message(FATAL_ERROR "Choose exactly one platform: PLATFORM_LINUX / PLATFORM_TEST")
 endif()
 if(${PLATFORM_COUNT} EQUAL 0)
-    message(FATAL_ERROR "Specify one platform, e.g. -DPLATFORM_LINUX=ON")
+    message(FATAL_ERROR "Specify one platform, e.g. -DPLATFORM_LINUX=ON or -DPLATFORM_TEST=ON")
 endif()
 
 # Привязываем опции к макросам для config.hpp
@@ -34,7 +34,6 @@ endif()
 set(BASE_SOURCES
     src/main.cpp
     src/app_core.cpp 
-    src/sensors/bh1750.cpp
     src/sensors/stub.cpp
 )
 add_executable(${PROJECT_NAME} ${BASE_SOURCES})

@@ -1,42 +1,34 @@
 #include <cstdint>
 
-#include "sensors/base.h"
-#include "sensors/stub.h"
+#if defined(PLATFORM_ESP32)
+    #include "sensors/bh1750.h"
+#else
+    #include "sensors/stub.h"
+#endif
 
-#include "transports/transport_wrapper.hpp"
-#include "config.hpp" 
+#include "config.hpp"
 #include "platform_delay.hpp"
-
 #include "app_core.h"
 
-int compute_dim_value(int lux) {
-    if (lux < 200) return 100;
-    if (lux < 400) return 60;
-    return 30;
-}
-
 template <typename T>
-void run_application(T& transport) {
-    Stub stub(SensorScenario::Evening);
-    stub.init(0x23);
-
-    // Фиксированный буфер на стеке: ровно 2 байта
-    uint8_t packet[2];
-
-    int lux {0};
-    int dim {0};
+void run_application(T& transport, LightSensor& sensor) {
+    uint8_t packet[3];
 
     while (true) {
-        lux = stub.readLux();
-        dim = compute_dim_value(lux);
+        const int lux = sensor.readLux();
+        uint16_t lux16 = 0;
+        if (lux > 0) {
+            lux16 = (lux > 65535) ? 65535 : static_cast<uint16_t>(lux);
+        }
 
         // Заполняем пакет строго по формату light_control: [ID][level]
         packet[0] = DEVICE_ID;
-        packet[1] = static_cast<uint8_t>(dim);  // 0–100;
+        packet[1] = static_cast<uint8_t>(lux16 >> 8);
+        packet[2] = static_cast<uint8_t>(lux16 & 0xFF);
 
         transport.send(packet, sizeof(packet));
 
-        platform_delay_ms(1000);
+        platform_delay_ms(SAMPLE_PERIOD_MS);
     }
 }
 
@@ -47,19 +39,19 @@ void run_application(T& transport) {
     #include "transports/udp_posix.h"
 
     template void run_application<TransportWrapper<UdpPosixTransport>>(
-        TransportWrapper<UdpPosixTransport>&);
+        TransportWrapper<UdpPosixTransport>&, LightSensor&);
 
 #elif defined(PLATFORM_ESP32)
     #include "transports/wifi_esp32.h"   
 
     template void run_application<TransportWrapper<WifiEsp32Transport >>(
-        TransportWrapper<WifiEsp32Transport >&);
+        TransportWrapper<WifiEsp32Transport >&, LightSensor&);
 
 #elif defined(PLATFORM_TEST)
     #include "transports/null.h"   
 
     template void run_application<TransportWrapper<NullTransport >>(
-        TransportWrapper<NullTransport >&);
+        TransportWrapper<NullTransport >&, LightSensor&);
 
 #else
     #error "Не определена целевая платформа: PLATFORM_LINUX или PLATFORM_ESP32"

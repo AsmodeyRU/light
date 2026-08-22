@@ -1,10 +1,22 @@
 #pragma once
 
+#include <cstdint>
+
+#include "transports/transport_wrapper.hpp"
+
 // ------------------------------------------------------------------
 // ГЛОБАЛЬНЫЕ ДЕФОЛТЫ (единая точка правды для всех платформ)
 // Эти значения используются как fallback, если платформа не переопределила их.
 // ------------------------------------------------------------------
 constexpr uint8_t DEVICE_ID = 1;
+
+constexpr unsigned SAMPLE_PERIOD_MS = 1000;
+
+// BH1750FVI: ADDR к GND → 0x23, ADDR к VCC → 0x5C. GY-302 обычно 0x23.
+constexpr uint8_t BH1750_I2C_ADDR = 0x23;
+
+// UDP-пакет: ровно 3 байта [device_id][lux_hi][lux_lo] (lux uint16 big-endian).
+// Это не шина BH1750: чип по I2C отдаёт 2 байта raw, плюс сюда добавляется device_id.
 
 // ------------------------------------------------------------------
 // ПЛАТФОРМА ЗАДАЁТСЯ ТОЛЬКО В CMake (add_compile_definitions)
@@ -13,6 +25,7 @@ constexpr uint8_t DEVICE_ID = 1;
 
 #if defined(PLATFORM_ESP32)
     #include "transports/wifi_esp32.h"
+
     using TransportType = TransportWrapper<WifiEsp32Transport>;
     #define TRANSPORT_HAS_WIFI
 
@@ -26,9 +39,6 @@ constexpr uint8_t DEVICE_ID = 1;
     constexpr const char* WIFI_PASS = kWifiPass;
     constexpr const char* CONTROLLER_IP = kControllerIp;
     constexpr uint16_t CONTROLLER_PORT = kControllerPort;
-
-    constexpr unsigned SAMPLE_PERIOD_MS = 1000;
-    constexpr uint8_t BH1750_I2C_ADDR = 0x23;
 
     constexpr int I2C_SDA_GPIO = 21;
     constexpr int I2C_SCL_GPIO = 22;

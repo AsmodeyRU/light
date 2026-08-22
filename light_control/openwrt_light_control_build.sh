@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Запоминаем путь, откуда запустили скрипт
 START_DIR="$(pwd)"
@@ -31,7 +31,7 @@ echo "=== Готово. Вернулись в: $START_DIR ==="
 echo "Сборка завершена."
 
 # --- Путь к готовому .ipk (правильный, без дублирования externals/openwrt) ---
-IPK_PATH="${BASE_DIR}/bin/packages/mips_24kc/light_control/light_control_1.0.19-1_mips_24kc.ipk"
+IPK_PATH="${BASE_DIR}/bin/packages/mips_24kc/light_control/light_control_1.0.23-1_mips_24kc.ipk"
 
 if [[ ! -f "$IPK_PATH" ]]; then
   echo "Ошибка: .ipk не найден по пути: $IPK_PATH" >&2

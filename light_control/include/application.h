@@ -4,6 +4,7 @@
 
 #include "logger.h"
 #include "stats_collector.h"
+#include "last_status.h"
 #include "udp_server.h"
 
 #ifdef UBUS_ENABLED
@@ -24,6 +25,7 @@ public:
 private:
     Logger logger_;
     StatsCollector stats_;
+    LastStatus last_status_;
     UdpServer server_;
 
     std::atomic<bool> should_stop_{false};

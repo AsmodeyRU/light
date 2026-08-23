@@ -13,16 +13,18 @@
 
 #include "transports/wifi_esp32.h"
 
-static const char* TAG = "WifiEsp32Tr";
+namespace {
+    constexpr const char* TAG = "WifiEsp32Tr";
 
-static constexpr EventBits_t kGotIpBit = BIT0;
-static constexpr EventBits_t kFailBit = BIT1;
-static constexpr int kMaxRetry = 20;
-static constexpr TickType_t kConnectTimeout = pdMS_TO_TICKS(30000);
+    constexpr EventBits_t kGotIpBit = BIT0;
+    constexpr EventBits_t kFailBit = BIT1;
+    constexpr int kMaxRetry = 20;
+    constexpr TickType_t kConnectTimeout = pdMS_TO_TICKS(30000);
 
-static StaticEventGroup_t s_events_mem;
-static EventGroupHandle_t s_events = nullptr;
-static int s_retry = 0;
+    StaticEventGroup_t s_events_mem;
+    EventGroupHandle_t s_events = nullptr;
+    int s_retry = 0;
+}
 
 static void wifi_event_handler(void* /*arg*/, esp_event_base_t base, int32_t id, void* data) {
     if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {

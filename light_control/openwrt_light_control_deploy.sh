@@ -6,7 +6,7 @@ ROUTER_IP="192.168.1.1"
 ROUTER_USER="root"
 
 BASE_DIR="$HOME/Projects/light/light_control/externals/openwrt"
-IPK_NAME="light_control_1.0.19-1_mips_24kc.ipk"
+IPK_NAME="light_control_1.0.23-1_mips_24kc.ipk"
 IPK_PATH="${BASE_DIR}/bin/packages/mips_24kc/light_control/${IPK_NAME}"
 
 # --- ПРОВЕРКИ ---

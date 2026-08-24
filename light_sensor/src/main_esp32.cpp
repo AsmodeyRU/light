@@ -24,15 +24,16 @@ extern "C" void app_main(void) {
     }
     ESP_ERROR_CHECK( ret );
 
-    // Конструктор тоже принимает безопасные constexpr, а не сырые CONFIG_*
-    TransportType transport(WIFI_SSID,
-                            WIFI_PASS,
-                            CONTROLLER_IP,
-                            CONTROLLER_PORT);
+    TransportType transport(WIFI_SSID, WIFI_PASS, CONTROLLER_IP, CONTROLLER_PORT);
 
-    if (!transport.init()) {
+    if (transport.init() == false) {
         ESP_LOGE(kTag, "Transport init failed");
         return;
+    }
+
+    ESP_LOGI(kTag, "Init requested. Waiting for connection...");
+    while (transport.is_initialized() == false) {
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     Bh1750 sensor;

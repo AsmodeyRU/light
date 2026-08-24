@@ -19,6 +19,10 @@ public:
         return _t.init();
     }
 
+    bool is_initialized() {
+        return _t.is_initialized();
+    }
+
     bool send(const unsigned char* data, std::size_t len) {
         return _t.send(data, len);
     }

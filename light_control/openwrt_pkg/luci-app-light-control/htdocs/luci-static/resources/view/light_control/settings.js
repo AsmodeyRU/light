@@ -7,6 +7,7 @@ return view.extend({
 		const m = new form.Map('light_control', _('Light Control'),
 			_('Configure the light control daemon. Saving writes UCI and restarts the service. Map and scene changes can also be picked up from Status → Reload UCI without a process restart; a new UDP port still needs a restart.'));
 
+		// --- Service ---
 		const s = m.section(form.TypedSection, 'light_control', _('Service'));
 		s.anonymous = true;
 		s.addremove = false;
@@ -29,6 +30,23 @@ return view.extend({
 		o.placeholder = 'lan';
 		o.rmempty = true;
 
+		// --- Tuya Dimmer ---
+		const tuya = m.section(form.TypedSection, 'light_control', _('Tuya Dimmer'));
+		tuya.anonymous = true;
+		tuya.addremove = false;
+
+		o = tuya.option(form.Value, 'tuya_ip', _('Tuya IP address'),
+			_('IP address of the Tuya/Smart Life dimmer. Leave empty to disable dimmer control.'));
+		o.placeholder = '192.168.1.123';
+		o.rmempty = true;  // Пустое значение = диммер отключён
+
+		o = tuya.option(form.Value, 'local_key', _('Local Key'),
+			_('Local key for the Tuya device. WARNING: This is sensitive data; do not share it.'));
+		o.password = true; // Ввод как пароль (точки вместо символов)
+		o.placeholder = 'abcdef1234567890';
+		o.rmempty = true;
+
+		// --- Brightness map ---
 		const t = m.section(form.TableSection, 'map', _('Brightness map'),
 			_('If measured lux is below a threshold, that brightness is used. Rows are matched from the lowest threshold to the highest.'));
 		t.anonymous = true;
@@ -48,6 +66,7 @@ return view.extend({
 			_('Optional group name. Empty rows are the default map. A scene can point at a named set via Map set.'));
 		o.rmempty = true;
 
+		// --- Scenes ---
 		const sc = m.section(form.TypedSection, 'scene', _('Scenes'),
 			_('The local clock picks the first matching scene. Night may wrap past midnight (for example 18:00–06:00). Each scene uses the default map unless Map set names a group.'));
 		sc.anonymous = false;

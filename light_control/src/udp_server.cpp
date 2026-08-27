@@ -83,8 +83,23 @@ void UdpServer::reapply_output_locked() {
 }
 
 void UdpServer::apply_settings(const UciSettings& cfg) {
-    std::lock_guard<std::mutex> lock(mu_);
-    cfg_ = cfg;
+    {
+        std::lock_guard<std::mutex> lock(mu_);
+        cfg_ = cfg;
+    }
+    
+    if (!cfg.tuya_ip.empty() && !cfg.local_key.empty()) {
+        if (dimmer_.init(cfg.tuya_ip, cfg.local_key)) {
+            logger_.info("Dimmer initialized from settings: IP=%s", cfg.tuya_ip.c_str());
+        } else {
+            logger_.error("Dimmer init failed: IP=%s", cfg.tuya_ip.c_str());
+            // Тут можно либо установить внутренний флаг ошибки, либо просто оставить диммер неинициализированным
+        }
+    } else {
+        // Опционально: явно сбросить или пометить, что диммер неактивен
+        logger_.debug("No Tuya credentials in settings; dimmer not initialized");
+    }
+
     reapply_output_locked();
 }
 

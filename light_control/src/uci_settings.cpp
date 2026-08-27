@@ -110,8 +110,10 @@ bool load_uci_settings(UciSettings& out) {
 
     BrightnessCurve loaded_default;
     loaded_default.clear();
+
     BrightnessPolicy loaded_named;
     loaded_named.clear_named();
+
     SceneScheduler loaded_scenes;
     loaded_scenes.clear();
 
@@ -122,6 +124,7 @@ bool load_uci_settings(UciSettings& out) {
             continue;
         }
 
+        // --- Читаем общие настройки в секции light_control ---
         if (std::strcmp(s->type, "light_control") == 0) {
             const char* val = uci_lookup_option_string(ctx, s, "enabled");
             out.enabled = parse_enabled(val, out.enabled);
@@ -136,9 +139,26 @@ bool load_uci_settings(UciSettings& out) {
             if (val && val[0] != '\0') {
                 copy_iface(out.iface, sizeof(out.iface), val);
             }
+
+            const char* ip_val = uci_lookup_option_string(ctx, s, "tuya_ip");
+            const char* key_val = uci_lookup_option_string(ctx, s, "local_key");
+
+            if (ip_val && ip_val[0] != '\0') {
+                out.tuya_ip = ip_val;
+            } else {
+                out.tuya_ip.clear();
+            }
+
+            if (key_val && key_val[0] != '\0') {
+                out.local_key = key_val;
+            } else {
+                out.local_key.clear();
+            }
+ 
             continue;
         }
 
+        // Читаем map
         if (std::strcmp(s->type, "map") == 0) {
             const char* lux_val = uci_lookup_option_string(ctx, s, "lux_below");
             const char* br_val = uci_lookup_option_string(ctx, s, "brightness");
@@ -158,6 +178,7 @@ bool load_uci_settings(UciSettings& out) {
             continue;
         }
 
+        // Читаем scene
         if (std::strcmp(s->type, "scene") != 0) {
             continue;
         }

@@ -14,12 +14,31 @@ Works on TP‑Link TL‑WDR4300 v1 (ath79/generic), OpenWrt 23.05.5 r24106‑10c
 - Built with CMake (ninja) + OpenWrt SDK (package mode).
 - No dynamic memory allocation, pointers, or static memory allocation in the project’s core logic.
 - Minimal macros: platform‑dependent logic is isolated in separate modules.
+- Tuya local control (v3.3 protocol) for dimmer devices:
+  - AES‑128‑ECB encryption (no IV, PKCS7 padding);
+  - Correct CRC32 calculation over full packet (including prefix);
+  - Version header `"3.3"` sent in clear text before encrypted payload;
+  - DP mapping: `DP_SWITCH=20` (power), `DP_MODE=21` (mode), `DP_BRIGHT=22` (brightness);
+  - Response parsing with retcode validation (`retcode=0` = success).
+- Heartbeat mechanism to keep TCP connection alive (periodic status request).
 
 ## Dependencies
 
 - OpenWrt SDK for `ath79/generic`.
 - Compiler: GNU 12.3.0 + musl.
 - OpenWrt libraries: `libubus`, `libuloop`.
+- OpenWrt libraries: `libubus`, `libuloop`.
+- Cryptography: `libssl`, `libcrypto` (OpenSSL 1.1+), `libz` (zlib).
+- Compiler: GNU 12.3.0 + musl.
+
+>Note: In OpenWrt make menuconfig, ensure the following packages are enabled:
+
+    - Libopenssl / Libcrypto
+    - Zlib
+
+    Without these, the build will fail at link time or the binary will fail to load on the router.
+
+
 
 ## Repository structure
 
@@ -47,6 +66,7 @@ Clone the SDK into the `externals/` directory:
     git checkout openwrt-23.05   
     ./scripts/feeds update -a
     ./scripts/feeds install -a
+    # Ensure libopenssl, libz are available in the feeds
 
 ## Environment setup
 
@@ -81,7 +101,9 @@ Output:
     bin/targets/ath79/generic/light_control_*.ipk.
 
 > Do not use cmake.mk and do not copy sources into the OpenWrt build tree — the build uses a separate CMake layer plus the package Makefile.
-> 
+
+> The package build (make package/light_control) requires that libopenssl, libz, and their dev-headers are available in the SDK. If they are missing, the linker will fail.
+
 ## Installation on the router
 
    On the router (TP‑Link TL‑WDR4300 v1):
@@ -126,6 +148,19 @@ Output:
 
         logctl clear
 
+6. Verify Tuya control:
+   - Check that the dimmer responds to brightness changes:
+     ```sh
+     ubus call light_control set_brightness '{"value":50}'
+     ```
+   - Confirm in logs that the device accepted the command:
+     ```sh
+     logread | grep -E "Tuya: SET command succeeded|Tuya: recv()" | tail -n 20
+     ```
+   - Look for heartbeat activity (if enabled):
+     ```sh
+     logread | grep "Tuya: sending heartbeat" | tail -n 10
+     ```
 ## Shutdown mechanism (current implementation)
 
 Shutdown works deterministically due to the explicit loop in UbusExporter::run:
@@ -166,6 +201,9 @@ Verify no SIGKILL is sent:
 - Keep the list of source files in one place (in CMakeLists.txt) and avoid duplication.
 - Avoid excessive #if defined in main.cpp — move platform‑specific logic to separate modules.
 - Do not copy project sources into the SDK — use an external path and feeds (or a direct link in feeds.conf).
+
+>Security note: The repository must never contain real local_key values or any device-specific secrets. All keys are injected via UCI/runtime configuration and must not be hardcoded in source code or committed to Git.
+The Tuya v3.3 implementation assumes that the local_key is provided in raw string form (not hex/MD5) and converted to binary internally.
 
 ## Next steps
 

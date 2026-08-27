@@ -10,11 +10,10 @@ PKG_MAINTAINER:=xdcsystems
 PKG_SOURCE_PATH:=../../../light_control
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 
+PKG_BUILD_DEPENDS:=+openssl +zlib
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
-
-# DISABLE_CMAKE_INSTALL:=1
-# CMAKE_INSTALL_PREFIX:=/usr
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
@@ -31,7 +30,7 @@ define Package/light_control
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Light Control Daemon
-  DEPENDS:=+libuci +libubox +libubus +libstdcpp +libatomic +libc +libpthread
+  DEPENDS:=+libuci +libubox +libubus +libstdcpp +libatomic +libc +libpthread +libopenssl +zlib
 endef
 
 define Package/light_control/description

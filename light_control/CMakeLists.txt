@@ -4,56 +4,9 @@ project(light_control CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if(NOT DEFINED OPENWRT_BUILD)
-    set(OPENWRT_BUILD OFF)
-endif()
-
-if(OPENWRT_BUILD)
-    # Определяем переменные окружения для кросс-компиляции
-    if(NOT DEFINED CROSS_COMPILE)
-        set(CROSS_COMPILE "mips-openwrt-linux-musl-")
-    endif()
-
-    if(NOT DEFINED TARGET_ARCH)
-        set(TARGET_ARCH "mips")
-    endif()
-
-    if(NOT DEFINED STAGING_DIR)
-        set(STAGING_DIR "/home/xdcsystems/Projects/light/light_control/externals/openwrt/staging_dir")
-    endif()
-
-    # Добавляем путь к инструментам в PATH
-    set(ENV{PATH} "${STAGING_DIR}/host/bin:$ENV{PATH}")
-
-    # Настраиваем компиляторы
-    set(CMAKE_C_COMPILER "${CROSS_COMPILE}gcc")
-    set(CMAKE_CXX_COMPILER "${CROSS_COMPILE}g++")
-
-    # Указываем корневую директорию для поиска библиотек и заголовков
-    set(CMAKE_SYSROOT "${STAGING_DIR}/target-mips_24kc_musl")
-
-    # Добавляем пути к include и lib
-    include_directories(
-        ${STAGING_DIR}/target-mips_24kc_musl/usr/include
-    )
-
-    link_directories(
-        ${STAGING_DIR}/target-mips_24kc_musl/usr/lib
-    )
-endif()
-
-# --- ВАЖНО: Указываем пути к библиотекам OpenWrt ---
-# Эти пути генерируются автоматически при сборке пакета в OpenWrt
-if(DEFINED ENV{STAGING_DIR_TARGET})
-    set(OPENWRT_LIB_DIR "$ENV{STAGING_DIR_TARGET}/usr/lib")
-    set(OPENWRT_INC_DIR "$ENV{STAGING_DIR_TARGET}/usr/include")
-else()
-    # Если собираешь локально без переменных OpenWrt (для тестов)
-    message(WARNING "OpenWrt staging dir not found. Using default search paths.")
-endif()
-
 option(ENABLE_UBUS "Enable UBus support" OFF)
 
+# Если OPENWRT_BUILD задан снаружи (через CMAKE_OPTIONS), включаем UBus
 if(OPENWRT_BUILD)
     set(ENABLE_UBUS ON CACHE BOOL "Force UBus for OpenWRT" FORCE)
 endif()
@@ -87,9 +40,12 @@ target_include_directories(light_control PRIVATE
 
 # atomic нужен на MIPS для std::atomic
 if(OPENWRT_BUILD)
-    # Важно: порядок библиотек и явное указание директории поиска
-    link_directories(${OPENWRT_LIB_DIR})
-    target_link_libraries(light_control PRIVATE atomic uci)
+    target_compile_definitions(light_control PRIVATE OPENWRT_BUILD)
+    target_link_libraries(light_control PRIVATE atomic uci crypto z)
+
+    # Здесь можно оставить crypto/z, ЕСЛИ ты включил их через menuconfig и PKG_BUILD_DEPENDS
+    # Но лучше убрать, если планируешь использовать встроенные реализации (без OpenSSL/zlib)
+    # target_link_libraries(light_control PRIVATE crypto z)
 endif()
 
 if(ENABLE_UBUS AND OPENWRT_BUILD)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "scene_scheduler.h"
 
@@ -9,6 +10,8 @@ struct UciSettings {
     uint16_t port = 5005;
     char iface[32] = "lan";
     BrightnessPolicy policy;
+    std::string tuya_ip;
+    std::string local_key;
 };
 
 // Fills `out` with defaults, then overlays /etc/config/light_control via libuci
